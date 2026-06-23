@@ -11,6 +11,7 @@ import NotFound from "./pages/NotFound";
 import WorkerRegistration from "./pages/WorkerRegistration";
 import UserLogin from "./pages/UserLogin";
 import UserRegister from "./pages/UserRegister";
+import ForgotPassword from "./pages/ForgotPassword";
 import WorkersList from "./pages/WorkersList";
 import Profile from "./pages/Profile";
 import About from "./pages/About";
@@ -28,13 +29,19 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter>
+          <BrowserRouter
+            future={{
+              v7_startTransition: true,
+              v7_relativeSplatPath: true,
+            }}
+          >
             <ScrollToTop />
             <div className="min-h-screen">
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/register-worker" element={<WorkerRegistration />} />
                 <Route path="/login" element={<UserLogin />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/register-user" element={<UserRegister />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/workers" element={<WorkersList />} />

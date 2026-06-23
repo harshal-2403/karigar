@@ -25,38 +25,42 @@ const VantaBackground = ({
   const [scriptsLoaded, setScriptsLoaded] = useState(false);
 
   useEffect(() => {
-    const loadScripts = async () => {
-      // Load Three.js
-      const threeScript = document.createElement('script');
-      threeScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js';
-      threeScript.async = true;
-      
-      // Load Vanta Waves
-      const vantaScript = document.createElement('script');
-      vantaScript.src = 'https://cdn.jsdelivr.net/npm/vanta@0.5.24/dist/vanta.waves.min.js';
-      vantaScript.async = true;
+    const THREE_URL = "https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js";
+    const VANTA_URL = "https://cdn.jsdelivr.net/npm/vanta@0.5.24/dist/vanta.waves.min.js";
 
-      document.head.appendChild(threeScript);
-      
-      threeScript.onload = () => {
-        document.head.appendChild(vantaScript);
-      };
-
-      vantaScript.onload = () => {
-        setScriptsLoaded(true);
-      };
-
-      return () => {
-        if (document.head.contains(threeScript)) {
-          document.head.removeChild(threeScript);
+    const loadScript = (src: string) =>
+      new Promise<void>((resolve, reject) => {
+        if (document.querySelector(`script[src="${src}"]`)) {
+          resolve();
+          return;
         }
-        if (document.head.contains(vantaScript)) {
-          document.head.removeChild(vantaScript);
+        const s = document.createElement("script");
+        s.src = src;
+        s.async = true;
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error(`Failed to load ${src}`));
+        document.head.appendChild(s);
+      });
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        if (!window.THREE) {
+          await loadScript(THREE_URL);
         }
-      };
+        if (!window.VANTA) {
+          await loadScript(VANTA_URL);
+        }
+        if (!cancelled) setScriptsLoaded(true);
+      } catch {
+        if (!cancelled) setScriptsLoaded(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
     };
-
-    loadScripts();
   }, []);
 
   useEffect(() => {

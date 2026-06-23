@@ -192,7 +192,7 @@ const Footer = () => {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         @keyframes grid-flow {
           0% {
             transform: translateY(0);

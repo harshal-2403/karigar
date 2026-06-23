@@ -12,6 +12,7 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { format, differenceInCalendarDays } from "date-fns";
 import { API_ENDPOINTS } from "@/config/api";
 import { DateRange } from "react-day-picker";
@@ -35,6 +36,7 @@ interface BookingDialogProps {
 
 const BookingDialog = ({ open, onOpenChange, worker, onBookingSuccess }: BookingDialogProps) => {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -61,10 +63,9 @@ const BookingDialog = ({ open, onOpenChange, worker, onBookingSuccess }: Booking
     setIsLoading(true);
 
     try {
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
-      
-      if (!user.id) {
+      if (!user?.id) {
         setError("Please login to continue");
+        setIsLoading(false);
         return;
       }
       
@@ -72,20 +73,29 @@ const BookingDialog = ({ open, onOpenChange, worker, onBookingSuccess }: Booking
       const dayCount = Math.max(1, differenceInCalendarDays(dateRange.to, dateRange.from) + 1);
       const totalPrice = dayCount * (worker.perDayCharges || 0);
 
+      const safePerDay = Number(worker.perDayCharges);
+      const safeTotal = Number.isFinite(totalPrice) ? totalPrice : 0;
+      const userEmail = typeof user?.email === "string" ? user.email.trim() : "";
+      if (!userEmail) {
+        setError("Your account has no email. Log out and log in again, or re-register.");
+        setIsLoading(false);
+        return;
+      }
+
       const bookingData = {
         workerId: worker._id,
         workerName: worker.name,
         workerPhone: worker.phone,
         service: worker.service,
         userId: user.id,
-        userName: user.name,
-        userEmail: user.email,
+        userName: user.name || user.email.split("@")[0] || "User",
+        userEmail,
         startDate: format(dateRange.from, "yyyy-MM-dd"),
         endDate: format(dateRange.to, "yyyy-MM-dd"),
         time: selectedTime,
         status: "pending",
-        perDayCharges: worker.perDayCharges,
-        totalPrice: totalPrice,
+        perDayCharges: Number.isFinite(safePerDay) ? safePerDay : 0,
+        totalPrice: safeTotal,
         dayCount: dayCount,
       };
 
@@ -97,12 +107,22 @@ const BookingDialog = ({ open, onOpenChange, worker, onBookingSuccess }: Booking
         body: JSON.stringify(bookingData),
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Booking failed");
+      const raw = await response.text();
+      let data: { message?: string; detail?: string; id?: string } = {};
+      try {
+        data = raw ? (JSON.parse(raw) as typeof data) : {};
+      } catch {
+        throw new Error(
+          `Server returned non-JSON (${response.status}). Is the backend running on port 8080?`
+        );
       }
 
+      if (!response.ok) {
+        const extra = data.detail ? ` — ${data.detail}` : "";
+        throw new Error((data.message || "Booking failed") + extra);
+      }
+
+      setIsLoading(false);
       // Show confirmation
       setBookingId(data.id || "success");
       setShowConfirmation(true);

@@ -16,9 +16,11 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { ArrowLeft, CheckCircle2, MapPin } from "lucide-react";
 import { API_ENDPOINTS } from "@/config/api";
+import { useToast } from "@/hooks/use-toast";
 
 const WorkerRegistration = () => {
   const { t } = useLanguage();
+  const { toast } = useToast();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: "",
@@ -168,6 +170,12 @@ const WorkerRegistration = () => {
       }
 
       // Success
+      toast({
+        title: t("workerRegistration.successTitle") || "Registration successful",
+        description:
+          t("workerRegistration.successMessage") ||
+          "Your worker profile has been submitted. Redirecting to home…",
+      });
       setIsSubmitted(true);
       
       // Redirect to home after 2 seconds

@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Embedded H2 DB (local dev)
+data/
+backend/data/
