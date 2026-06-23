@@ -96,20 +96,4 @@ public class UserDao {
         }
         return null;
     }
-
-    /**
-     * Finds an existing user by email or creates one for Auth0 sign-in (password not used for OAuth).
-     */
-    public JSONObject findOrCreateAuthUser(String name, String email) throws SQLException {
-        JSONObject existing = findUserByEmail(email);
-        if (existing != null) {
-            return existing;
-        }
-        long id = createUser(name, email, PasswordUtil.sha256("AUTH0_OAUTH_ONLY"));
-        JSONObject user = new JSONObject();
-        user.put("id", String.valueOf(id));
-        user.put("name", name);
-        user.put("email", email.toLowerCase());
-        return user;
-    }
 }
